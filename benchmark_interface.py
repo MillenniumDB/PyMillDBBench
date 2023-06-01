@@ -14,9 +14,9 @@ class BenchmarkInterface(ABC):
     # def delete_database(self, name: str):
     #    pass
 
-    # @abstractmethod
-    # def start_server(self):
-    #    pass
+    @abstractmethod
+    def start_server(self):
+        pass
 
     # @abstractmethod
     # def stop_server(self):
@@ -24,22 +24,28 @@ class BenchmarkInterface(ABC):
 
 
 class MillenniumDBBenchmarkInterface(BenchmarkInterface):
-    def __init__(self, data_path: str, create_db_path: str):
+    def __init__(self, data_path: str, create_db_path: str, server_pymilldb_path: str):
         os.makedirs(data_path, exist_ok=True)
         if not os.path.exists(create_db_path):
             raise FileNotFoundError(f"create_db binary not found: {create_db_path}")
+        if not os.path.exists(server_pymilldb_path):
+            raise FileNotFoundError(
+                f"server_pymilldb binary not found: {server_pymilldb_path}"
+            )
 
         # Data storage path
         self.data_path = data_path
         # Executable paths
         self.create_db_path = create_db_path
+        self.server_pymilldb_path = server_pymilldb_path
 
     def create_database(self, name: str, graph: Data) -> str:
-        # TODO: Prevent creation if already exists?
+        db_path = os.path.join(self.data_path, name)
         dump_path = os.path.join(self.data_path, f"{name}.milldb")
-        if os.path.isfile(dump_path):
-            # Delete the dump if it already exists
-            os.remove(dump_path)
+
+        if os.path.isdir(db_path):
+            raise FileExistsError(f"Database directory already exists: {db_path}")
+
         # Write the graph dump
         with open(dump_path, "w") as f:
             # Nodes
@@ -51,7 +57,15 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
                     f"N{graph.edge_index[0, edge_idx]}->N{graph.edge_index[1, edge_idx]} :T\n"
                 )
 
-        # TODO: Create the database
+        # Create the database
+        result = subprocess.run(
+            [self.create_db_path, dump_path, db_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"create_db: {result.stderr.decode('utf-8')}")
+
         # TODO: Store tensors
         #       - start_server
         #       - connect client
@@ -59,16 +73,4 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
         #       - store tensors
         #       - stop client
         #       - stop_server
-        # TODO: Return the database path
-        """
-        db_path = os.path.join(self.data_path, name)
-        if os.path.isdir(db_path):
-            # Delete the database if it already exists
-            os.rmtree(db_path)
-        os.makedirs(db_path)
-        subprocess.run([
-            self.create_db_path,
-            "--db-path", db_path,
-
-        ]
-        """
+        return db_path
