@@ -84,7 +84,8 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
             TensorStore.create(client, self.store_name, graph.num_node_features)
             with TensorStore(client, self.store_name) as store:
                 # TODO: store tensors
-                print("TODO: store tensors")
+                # for node_idx in range(graph.num_nodes):
+                #     store[obj_id(f"N{node_idx}")] = graph.x[node_idx]
                 pass
         self.stop_server()
 
