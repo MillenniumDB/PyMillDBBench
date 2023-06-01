@@ -17,8 +17,15 @@ if __name__ == "__main__":
     dataset = CoraFull(root="./tmp/CoraFull")
     data = dataset[0]
     
-    MDB = MillenniumDBBenchmarkInterface(
+    mdb = MillenniumDBBenchmarkInterface(
         data_path="./tmp/MillenniumDB",
         create_db_path="/home/zeus/MDB/MillenniumDB-Dev/build/Release/bin/create_db",
+        server_pymilldb_path="/home/zeus/MDB/MillenniumDB-Dev/build/Release/bin/server_pymilldb",
+        port=8080
     )
-    MDB.create_database(name="CoraFull", graph=data)
+
+    # Remove cora (if exists, else do nothing)
+    mdb.delete_database("CoraFull")
+    # Create database
+    db_path = mdb.create_database(name="CoraFull", graph=data)
+    print(db_path)
