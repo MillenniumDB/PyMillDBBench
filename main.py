@@ -28,5 +28,4 @@ if __name__ == "__main__":
     mdb.delete_database("PubMed")
     # Create database
     db_path = mdb.create_database(name="PubMed", graph=data)
-    db_path = "./tmp/MillenniumDB/PubMed"
 

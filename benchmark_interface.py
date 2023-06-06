@@ -11,19 +11,23 @@ from torch_geometric.data import Data
 
 class BenchmarkInterface(ABC):
     @abstractmethod
-    def create_database(self, name: str, graph: Data) -> str:
+    ## Create a database given a name and a graph
+    def create_database(self, name: str, graph: Data):
         pass
 
     @abstractmethod
+    ## Delete a database given its name
     def delete_database(self, name: str):
         pass
 
     @abstractmethod
-    def start_server(self) -> None:
+    ## Start a server given a database name. A single server is admitted per instance
+    def start_server(self, name: str):
         pass
 
     @abstractmethod
-    def stop_server(self) -> None:
+    ## Stop the currently running server
+    def stop_server(self):
         pass
 
 
@@ -46,7 +50,7 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
         self.server_pymilldb_path = server_pymilldb_path
         # Port
         self.port = port
-        # Server process
+        # Server processes
         self.server_process = None
         # TensorStore name to use
         self.store_name = "feat"
@@ -79,24 +83,23 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
             raise RuntimeError(f"create_db: {result.stderr.decode('utf-8')}")
 
         # Store tensors
-        self.start_server(db_path)
+        self.start_server(name)
         with MDBClient("localhost", self.port) as client:
             TensorStore.create(client, self.store_name, graph.num_node_features)
             with TensorStore(client, self.store_name) as store:
                 for node_idx in range(graph.num_nodes):
-                   store[f"N{node_idx}"] = graph.x[node_idx]
+                    store[f"N{node_idx}"] = graph.x[node_idx]
         self.stop_server()
-
-        return db_path
 
     def delete_database(self, name: str) -> None:
         db_path = os.path.join(self.data_path, name)
         shutil.rmtree(db_path, ignore_errors=True)
 
-    def start_server(self, db_path: str) -> None:
+    def start_server(self, name: str) -> None:
         if self.server_process is not None:
-            raise RuntimeError("Server process has not been stopped.")
+            raise RuntimeError(f"Server process is already running")
 
+        db_path = os.path.join(self.data_path, name)
         self.server_process = subprocess.Popen(
             [self.server_pymilldb_path, db_path, "-p", str(self.port)],
             stdout=subprocess.DEVNULL,
@@ -107,5 +110,9 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
             time.sleep(0.5)
 
     def stop_server(self):
+        if self.server_process is None:
+            raise RuntimeError(f"Server process is not running")
+
         self.server_process.kill()
         self.server_process.wait()
+        self.server_process = None
