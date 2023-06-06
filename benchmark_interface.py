@@ -83,10 +83,8 @@ class MillenniumDBBenchmarkInterface(BenchmarkInterface):
         with MDBClient("localhost", self.port) as client:
             TensorStore.create(client, self.store_name, graph.num_node_features)
             with TensorStore(client, self.store_name) as store:
-                # TODO: store tensors
-                # for node_idx in range(graph.num_nodes):
-                #     store[obj_id(f"N{node_idx}")] = graph.x[node_idx]
-                pass
+                for node_idx in range(graph.num_nodes):
+                   store[f"N{node_idx}"] = graph.x[node_idx]
         self.stop_server()
 
         return db_path

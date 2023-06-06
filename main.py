@@ -2,7 +2,7 @@
 # https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.FakeDataset.html#torch_geometric.datasets.FakeDataset
 import os
 
-from torch_geometric.datasets import CoraFull
+from torch_geometric.datasets import CitationFull
 
 from benchmark_interface import MillenniumDBBenchmarkInterface
 
@@ -14,7 +14,7 @@ def clear_os():
 
 
 if __name__ == "__main__":
-    dataset = CoraFull(root="./tmp/CoraFull")
+    dataset = CitationFull(root="./tmp/PubMed", name="PubMed")
     data = dataset[0]
     
     mdb = MillenniumDBBenchmarkInterface(
@@ -24,8 +24,9 @@ if __name__ == "__main__":
         port=8080
     )
 
-    # Remove cora (if exists, else do nothing)
-    mdb.delete_database("CoraFull")
+    # Remove if exists, else do nothing)
+    mdb.delete_database("PubMed")
     # Create database
-    db_path = mdb.create_database(name="CoraFull", graph=data)
-    print(db_path)
+    db_path = mdb.create_database(name="PubMed", graph=data)
+    db_path = "./tmp/MillenniumDB/PubMed"
+
