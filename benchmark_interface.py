@@ -42,6 +42,7 @@ class BenchmarkInterface(ABC):
     def start_server(self, name: str, port: int) -> subprocess.Popen:
         pass
 
+
 class MillenniumDBBenchmark(BenchmarkInterface):
     def __init__(self, data_path: str, create_db_path: str, server_pymilldb_path: str):
         os.makedirs(data_path, exist_ok=True)
@@ -64,11 +65,11 @@ class MillenniumDBBenchmark(BenchmarkInterface):
         return os.path.isdir(os.path.join(self.data_path, name))
 
     def create_database(self, name: str, graph: Data, port: int = 8080) -> str:
+        if self.database_exists(name):
+            raise FileExistsError(f"Database already exists!")
+
         db_path = os.path.join(self.data_path, name)
         dump_path = os.path.join(self.data_path, f"{name}.milldb")
-
-        if os.path.isdir(db_path):
-            raise FileExistsError(f"Database directory already exists: {db_path}")
 
         # Write the graph dump
         with open(dump_path, "w") as f:
@@ -116,3 +117,76 @@ class MillenniumDBBenchmark(BenchmarkInterface):
         while socket.socket().connect_ex(("localhost", port)) != 0:
             time.sleep(0.5)
         return server_process
+
+
+class Neo4jBenchmark(BenchmarkInterface):
+    def __init__(self, data_path: str, neo4j_admin_path: str):
+        os.makedirs(data_path, exist_ok=True)
+        if not os.path.exists(neo4j_admin_path):
+            raise FileNotFoundError(
+                f"neo4j_admin_path binary not found: {neo4j_admin_path}"
+            )
+
+        # Data storage path
+        self.data_path = data_path
+        # Executable paths
+        self.neo4j_admin_path = neo4j_admin_path
+
+    def database_exists(self, name:str)->bool:
+        # TODO: Implement this
+        return False
+
+    def create_database(self, name: str, graph: Data) -> None:
+        if self.database_exists(name):
+            raise FileExistsError(f"Database already exists!")
+
+        db_path = os.path.join(self.data_path, name)
+        nodes_dump_path = os.path.join(self.data_path, f"nodes_{name}.csv")
+        edges_dump_path = os.path.join(self.data_path, f"edges_{name}.csv")
+
+        # Write the graph dump
+        with open(nodes_dump_path, "w") as f:
+            # Nodes
+            f.write(":id,feat\n")
+            for node_idx in range(graph.num_nodes):
+                f.write(f"{node_idx},{graph.x[node_idx].tolist()}\n")
+        with open(edges_dump_path, "w") as f:
+            # Edges
+            f.write(":START_ID,:END_ID,relation_type")
+            for edge_idx in range(graph.num_edges):
+                f.write(f"{graph.edge_index[0, edge_idx]},{graph.edge_index[1, edge_idx]},T\n")
+        # Create the database
+        # result = subprocess.run(
+        #     [self.neo4j_admin_path, "create", name],
+        #     stdout=subprocess.DEVNULL,
+        #     stderr=subprocess.DEVNULL,
+        # )
+        # if result.returncode != 0:
+        #     raise RuntimeError(f"neo4j-admin create: {result.stderr.decode('utf-8')}")
+
+    def delete_database(self):
+        # TODO: Implement this
+        pass
+
+    def start_server(self):
+        # TODO: Implement this
+        pass
+
+from torch_geometric.datasets import FakeDataset
+
+
+def random_graph(avg_num_nodes, avg_degree, num_node_features):
+    g = FakeDataset(
+        num_graphs=1,
+        avg_num_nodes=avg_num_nodes,
+        avg_degree=avg_degree,
+        num_channels=num_node_features,
+        edge_dim=10,
+        num_classes=1,
+        is_undirected=True,
+    ).generate_data()
+    del g.y
+    return g
+
+n4j = Neo4jBenchmark(data_path="./tmp/Neo4j", neo4j_admin_path="/usr/bin/neo4j-admin")
+n4j.create_database("test", random_graph(10, 2, 5))
