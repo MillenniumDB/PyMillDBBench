@@ -42,7 +42,6 @@ class BenchmarkInterface(ABC):
     def start_server(self, name: str, port: int) -> subprocess.Popen:
         pass
 
-
 class MillenniumDBBenchmark(BenchmarkInterface):
     def __init__(self, data_path: str, create_db_path: str, server_pymilldb_path: str):
         os.makedirs(data_path, exist_ok=True)
