@@ -4,7 +4,7 @@ import numpy as np
 from pymilldb import MDBClient, Sampler, TensorStore
 from torch_geometric.datasets import FakeDataset
 
-from benchmark_interface import MillenniumDBBenchmark, clear_os
+from benchmark_interface import MillenniumDBBenchmark, clear_os, stop_process
 
 
 def random_graph(avg_num_nodes, avg_degree, num_node_features):
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     NUM_NODE_FEATURES = 5
     PORT = 8080
     NUM_SAMPLES = 10
-    NAME = f"FakeDataset_N{AVG_NUM_NODES}_D{AVG_DEGREE}F_{NUM_NODE_FEATURES}"
+    NAME = f"FakeDataset_N{AVG_NUM_NODES}_D{AVG_DEGREE}_F{NUM_NODE_FEATURES}"
     GRAPH = random_graph(AVG_NUM_NODES, AVG_DEGREE, NUM_NODE_FEATURES)
 
     # MillenniumDB
@@ -50,13 +50,17 @@ if __name__ == "__main__":
     mdb_times = list()
     with MDBClient("localhost", PORT) as client:
         s = Sampler(client)
+        ts = TensorStore(client, "feat")
         print("Starting sampling...")
         for _ in range(NUM_SAMPLES):
             t0 = perf_counter_ns()
-            s.subgraph(10, [5, 5])
+            g = s.subgraph(10, [5, 5])
+            g.x = ts[g.node_ids]
             mdb_times.append(perf_counter_ns() - t0)
         print("Finished sampling:")
         print(f"AVG: {np.mean(mdb_times)/1e9}s")
         print(f"STD: {np.std(mdb_times)/1e9}s")
-
+    print("Stoping server...")
+    stop_process(server_process)
+    print("Server stopped")
 
