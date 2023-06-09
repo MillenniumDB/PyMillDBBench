@@ -119,102 +119,34 @@ class MillenniumDBBenchmark(BenchmarkInterface):
 
 
 class Neo4jBenchmark(BenchmarkInterface):
-    # If this does not work properly for your user, runn:
-    # sudo chown -R your_username /var/lib/neo4j/data/databases
-    def __init__(
-        self, data_path: str, neo4j_admin_path: str, internal_databases_path: str
-    ):
-        os.makedirs(data_path, exist_ok=True)
-        if not os.path.exists(neo4j_admin_path):
-            raise FileNotFoundError(
-                f"neo4j_admin_path binary not found: {neo4j_admin_path}"
-            )
-
-        # Data storage path
-        self.data_path = data_path
-        self.internal_databases_path = internal_databases_path
-        # Executable paths
-        self.neo4j_admin_path = neo4j_admin_path
+    def __init__(self, data_path: str):
+        raise NotImplementedError("Not implemented!")
 
     def database_exists(self, name: str) -> bool:
-        return os.path.isdir(os.path.join(self.internal_databases_path, name))
-
-    def create_database(self, name: str, graph: Data) -> None:
         raise NotImplementedError("Not implemented!")
-        if self.database_exists(name):
-            raise FileExistsError(f"Database already exists!")
 
-        nodes_dump_path = os.path.join(self.data_path, f"nodes_{name}.csv")
-        edges_dump_path = os.path.join(self.data_path, f"edges_{name}.csv")
+    def create_database(self, name: str, graph: Data):
+        raise NotImplementedError("Not implemented!")
 
-        # Write the graph dump
-        # TODO: Add features and change the import method
-        with open(nodes_dump_path, "w") as f:
-            # Nodes
-            f.write(":ID\n")  # ,feat\n")
-            for node_idx in range(graph.num_nodes):
-                f.write(f"{node_idx}\n")  # ,{graph.x[node_idx].tolist()}\n")
-        with open(edges_dump_path, "w") as f:
-            # Edges
-            f.write(":START_ID,:END_ID,:TYPE\n")
-            for edge_idx in range(graph.num_edges):
-                f.write(
-                    f"{graph.edge_index[0, edge_idx]},{graph.edge_index[1, edge_idx]},T\n"
-                )
-        # Create the database
-        """
-        result = subprocess.run(
-            [
-                self.neo4j_admin_path,
-                "database",
-                "import",
-                "full",
-                name,
-                f"--nodes={nodes_dump_path}",
-                f"--relationships={edges_dump_path}",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"neo4j-admin: {result.stderr.decode('utf-8')}")
-        """
+    def delete_database(self, name: str):
+        raise NotImplementedError("Not implemented!")
 
-    def delete_database(self, name):
-        shutil.rmtree(
-            os.path.join(self.internal_databases_path, name), ignore_errors=True
-        )
-
-    def start_server(self):
+    def start_server(self, name: str, port: int = 8080):
         raise NotImplementedError("Not implemented!")
 
 
-"""
+class ArangoDBBenchmark(BenchmarkInterface):
+    def __init__(self, data_path: str):
+        raise NotImplementedError("Not implemented!")
 
-def random_graph(avg_num_nodes, avg_degree, num_node_features):
-    from torch_geometric.datasets import FakeDataset
+    def database_exists(self, name: str) -> bool:
+        raise NotImplementedError("Not implemented!")
 
-    g = FakeDataset(
-        num_graphs=1,
-        avg_num_nodes=avg_num_nodes,
-        avg_degree=avg_degree,
-        num_channels=num_node_features,
-        edge_dim=10,
-        num_classes=1,
-        is_undirected=True,
-    ).generate_data()
-    del g.y
-    return g
+    def create_database(self, name: str, graph: Data):
+        raise NotImplementedError("Not implemented!")
 
-n4j = Neo4jBenchmark(
-    data_path="./tmp/Neo4j",
-    neo4j_admin_path="/usr/bin/neo4j-admin",
-    internal_databases_path="/var/lib/neo4j/data/databases",
-)
-db_name = "test"
-if n4j.database_exists(db_name):
-    print("Exists, deleting...")
-    n4j.delete_database(db_name)
+    def delete_database(self, name: str):
+        raise NotImplementedError("Not implemented!")
 
-n4j.create_database("test", random_graph(10, 2, 5))
-"""
+    def start_server(self, name: str, port: int = 8080):
+        raise NotImplementedError("Not implemented!")
