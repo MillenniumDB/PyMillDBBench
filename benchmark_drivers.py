@@ -4,9 +4,10 @@ import socket
 import subprocess
 import time
 from abc import ABC, abstractmethod
-
+import pickle
 from pymilldb import MDBClient, TensorStore
 from torch_geometric.data import Data
+from torch_geometric.datasets import FakeDataset
 
 
 ## Clear both buffer/cache and swap of the OS
@@ -20,8 +21,33 @@ def stop_process(process: subprocess.Popen) -> None:
     process.kill()
     process.wait()
 
+## Generate a random graph and store it as a pickle. If it was already generated before
+def random_graph(data_path: str, avg_num_nodes: int, avg_degree: int, num_node_features: int) -> Data:
+    os.makedirs(data_path, exist_ok=True)
+    pkl_path = os.path.join(data_path, f"N{avg_num_nodes}.D{avg_degree}.F{num_node_features}.pkl")
+    if not os.path.exists(pkl_path):
+        # Generate and dump the graph
+        g = FakeDataset(
+            num_graphs=1,
+            avg_num_nodes=avg_num_nodes,
+            avg_degree=avg_degree,
+            num_channels=num_node_features,
+            edge_dim=10,
+            num_classes=1,
+            is_undirected=True,
+            task="node"
+        ).generate_data()
+        del g.y
+        with open(pkl_path, "wb") as f:
+            pickle.dump(g, f)
+    else:
+        # Load an existing graph dump
+        with open(pkl_path, "rb") as f:
+            g = pickle.load(f)
+    return g
 
-class BenchmarkInterface(ABC):
+
+class BenchmarkDriver(ABC):
     @abstractmethod
     ## Return whether a database with the given name exists
     def database_exists(self, name: str) -> bool:
@@ -43,7 +69,7 @@ class BenchmarkInterface(ABC):
         pass
 
 
-class MillenniumDBBenchmark(BenchmarkInterface):
+class MillenniumDBDriver(BenchmarkDriver):
     def __init__(self, data_path: str, create_db_path: str, server_pymilldb_path: str):
         os.makedirs(data_path, exist_ok=True)
         if not os.path.exists(create_db_path):
@@ -118,7 +144,7 @@ class MillenniumDBBenchmark(BenchmarkInterface):
         return server_process
 
 
-class Neo4jBenchmark(BenchmarkInterface):
+class Neo4jDriver(BenchmarkDriver):
     def __init__(self, data_path: str):
         raise NotImplementedError("Not implemented!")
 
@@ -135,7 +161,7 @@ class Neo4jBenchmark(BenchmarkInterface):
         raise NotImplementedError("Not implemented!")
 
 
-class ArangoDBBenchmark(BenchmarkInterface):
+class ArangoDBDriver(BenchmarkDriver):
     def __init__(self, data_path: str):
         raise NotImplementedError("Not implemented!")
 
