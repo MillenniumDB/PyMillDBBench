@@ -3,7 +3,7 @@ from pymilldb import MDBClient, TensorStore, Sampler
 from time import perf_counter_ns
 import numpy as np
 
-dbnames = ["N100000.D10.F3"]
+graph_names = ["N100000.D10.F3"]
 driver = MillenniumDBDriver(
     data_path="./data/MillenniumDB",
     create_db_path="/home/mdbai/MillenniumDB-Dev/build/Release/bin/create_db",
@@ -13,12 +13,12 @@ NUM_SAMPLES = 10
 NUM_SEEDS = 64
 NUM_NEIGHBORS = [5, 5]
 
-for dbname in dbnames:
-    print(f"Sampling {NUM_SAMPLES} times from {dbname}...")
+for graph_name in graph_names:
+    print(f"Sampling {NUM_SAMPLES} times from {graph_name}...")
     sample_times = list()
 
     clear_os()
-    server_process = driver.start_server(dbname)
+    server_process = driver.start_server(graph_name)
     with MDBClient("localhost", 8080) as client:
         sampler = Sampler(client)
         store = TensorStore(client, "feat")
