@@ -1,24 +1,26 @@
 from benchmark_drivers import MillenniumDBDriver, stop_process, clear_os
 from pymilldb import MDBClient, TensorStore, Sampler
 from time import perf_counter_ns
+from memory_profiler import profile
+import argparse
 import numpy as np
 
-graph_names = ["N100000.D10.F3"]
-driver = MillenniumDBDriver(
-    data_path="./data/MillenniumDB",
-    create_db_path="/home/mdbai/MillenniumDB-Dev/build/Release/bin/create_db",
-    server_pymilldb_path="/home/mdbai/MillenniumDB-Dev/build/Release/bin/server_pymilldb",
-)
 NUM_SAMPLES = 10
 NUM_SEEDS = 64
 NUM_NEIGHBORS = [5, 5]
 
-for graph_name in graph_names:
-    print(f"Sampling {NUM_SAMPLES} times from {graph_name}...")
-    sample_times = list()
-
+@profile
+def sample(db_path):
     clear_os()
-    server_process = driver.start_server(graph_name)
+    driver = MillenniumDBDriver(
+        data_path="./data/MillenniumDB",
+        create_db_path="/home/mdbai/MillenniumDB-Dev/build/Release/bin/create_db",
+        server_pymilldb_path="/home/mdbai/MillenniumDB-Dev/build/Release/bin/server_pymilldb",
+    )
+
+    print(f"Sampling {NUM_SAMPLES} times from {db_path}...")
+    sample_times = list()
+    server_process = driver.start_server(db_path)
     with MDBClient("localhost", 8080) as client:
         sampler = Sampler(client)
         store = TensorStore(client, "feat")
@@ -30,7 +32,7 @@ for graph_name in graph_names:
     stop_process(server_process)
 
     print(
-        "STATS (in seconds)\n"
+        "TIME (in seconds)\n"
         f"  AVG: {np.mean(sample_times)}\n"
         f"  STD: {np.std(sample_times)}\n"
         f"  TOT: {np.sum(sample_times)}\n"
@@ -40,3 +42,11 @@ for graph_name in graph_names:
         f"  Q75: {np.quantile(sample_times, .75)}\n"
         f"  MAX: {np.max(sample_times)}"
     )
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Usage: mprof run --include-children benchmark_sample_milldb.py <db_path>"
+    )
+    parser.add_argument("db_path", type=str, help="The path of the MillenniumDB graph")
+    args = parser.parse_args()
+    sample(args.db_path)

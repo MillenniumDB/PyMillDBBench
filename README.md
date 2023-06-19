@@ -15,3 +15,11 @@ Benchmark resources for graph sampling
 - Install Neo4j.
 
 ### ArangoDB
+
+## Create databases
+
+Run the necessary cells from `benchmark_createdbs.ipynb`
+
+## Run benchmarks
+
+For tracking the memory, run the `benchmark_sample_<database_name>.py` scripts. You can see the details for running each one with the `--help` command.
