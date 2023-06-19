@@ -7,7 +7,7 @@ from time import perf_counter_ns
 import numpy as np
 
 
-NUM_SAMPLES = 10
+NUM_SAMPLES = 50
 NUM_SEEDS = 64
 NUM_NEIGHBORS = [5, 5]
 
