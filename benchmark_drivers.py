@@ -133,8 +133,9 @@ class MillenniumDBDriver(BenchmarkDriver):
         if socket.socket().connect_ex(("localhost", port)) == 0:
             raise RuntimeError(f"Server already running on port {port}")
         db_path = os.path.join(self.data_path, name)
+        buffer_size = 8 * 1024 * 256 # 8GB
         server_process = subprocess.Popen(
-            [self.server_pymilldb_path, db_path, "-p", str(port)],
+            [self.server_pymilldb_path, db_path, "-p", str(port), "-b", buffer_size],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
