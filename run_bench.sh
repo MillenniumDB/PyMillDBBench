@@ -1,6 +1,6 @@
 #!/bin/bash
 
-graph_names=("N100000.D10.F3" "N1000000.D10.F3" "N10000000.D10.F3")
+graph_names=("N100000.D10.F10" "N1000000.D10.F10" "N10000000.D10.F10")
 
 # In memory
 for graph_name in ${graph_names[@]}; do
